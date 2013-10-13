@@ -36,6 +36,7 @@ public class Client {
 //	public boolean scan(HashMap<String,InetAddress>addresses)
 	public boolean scan()
 	{
+		System.out.println("Scanning...");
 		/*
 		 * This method will search for servers
 		 * that match this client's remoteCode.
@@ -51,17 +52,23 @@ public class Client {
 			while(e.hasMoreElements())
 			{
 				NetworkInterface n = (NetworkInterface) e.nextElement();
+				System.out.println("Interface: "+n.getDisplayName());
 				Enumeration<InetAddress> ee = n.getInetAddresses();
 				
 				// For each interface, get addresses
 				while(ee.hasMoreElements())
 				{
 					InetAddress a = ee.nextElement();
+					System.out.println("Next Address...");
 					String ip = a.getHostName();
-					if (ip.charAt(3)=='.')
+					String ip2 = a.getHostAddress();
+					System.out.println("HostName: "+ip);
+					System.out.println("HostAddress: "+ip2);
+					if (ip2.matches("\\d?\\d?\\d?.\\d?\\d?\\d?.\\d?\\d?\\d?.\\d?\\d?\\d?")
+							&& !ip2.substring(0, 3).equals("127"))
 					{
-						String subnet = ip.substring(0, ip.lastIndexOf('.'));
-						System.out.println(subnet);
+						String subnet = ip2.substring(0, ip2.lastIndexOf('.'));
+						System.out.println("Subnet: "+subnet);
 						for (int i=0; i<256; i++)
 						{
 							// Get subnet
@@ -69,19 +76,25 @@ public class Client {
 							InetAddress address = InetAddress.getByName(thisIp);
 							System.out.println("Trying: "+address.getHostAddress());
 							
-//							// Check each IP in subnet
+							// Check each IP in subnet
 							if (!address.getHostAddress().equals(ip) && address.isReachable(200))
 							{
-								Socket sock = new Socket(address, port);
-								DataInputStream input = new DataInputStream(sock.getInputStream());
-								DataOutputStream output = new DataOutputStream(sock.getOutputStream());
+								Socket sock = null;
+								DataInputStream input = null;
+								DataOutputStream output = null;
+								try{
+								sock= new Socket(address, port);
+								input = new DataInputStream(sock.getInputStream());
+								output = new DataOutputStream(sock.getOutputStream());
 								output.writeInt(localCode);
 								output.flush();
 								
 								// If server is there and codes match...
 								if (input.readInt()==remoteCode)
 								{
-									connections.add(s);
+									connections.add(sock);
+								}
+								}catch(Exception ex){
 								}
 							}
 						}
